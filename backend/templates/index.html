@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Projects</title>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+</head>
+<body>
+    <h1>Project List</h1>
+    <button hx-get="/projects/htmx" hx-target="#projects-table" hx-trigger="click">Load Projects</button>
+    <div id="projects-table"></div>
+</body>
+</html>

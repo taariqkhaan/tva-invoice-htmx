@@ -1,0 +1,12 @@
+pandas
+streamlit
+pdfplumber
+pywin32
+openpyxl
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+streamlit-aggrid
+streamlit-extras
