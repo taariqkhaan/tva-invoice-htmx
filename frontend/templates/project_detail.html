@@ -1,0 +1,87 @@
+<div
+  x-data="{ open: true }"
+  x-show="open"
+  @click.outside="open = false"
+  class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+  @keydown.escape.window="open = false"
+>
+  <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 relative">
+
+    <!-- Project Name -->
+    <h2 class="text-2xl font-bold mb-2 max-w-2xl mb-6">
+      {{ project.project_name }}
+    </h2>
+
+    <!-- Project Details -->
+    <div class="grid grid-cols-3 gap-1 text-sm mb-6">
+      <div class="text-center border-r border-gray-200">
+        <span class="font-semibold">PO Approval Date:</span> {{ project.wo_date }}
+      </div>
+      <div class="text-center border-r border-gray-200">
+        <span class="font-semibold">TVA WO#:</span> {{ project.wo_number }}
+      </div>
+      <div class="text-center">
+        <span class="font-semibold">BMCD Project#:</span> {{ project.bmcd_number }}
+      </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>Total Labor: ${{ "{:,.2f}".format(project.total_labor_amount) }}</div>
+        <div>Total Non-Travel Expenses: ${{ "{:,.2f}".format(project.total_expenses_amount) }}</div>
+        <div>Total Tier Fee: ${{ "{:,.2f}".format(project.total_tier_fee) }}</div>
+        <div>Total Travel Expenses: ${{ "{:,.2f}".format(project.total_travel_amount) }}</div>
+        <div class="col-span-2 font-semibold">
+          Total Approved Amount: ${{ "{:,.2f}".format(project.total_budget_amount) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Table -->
+    <div class="rounded-lg overflow-hidden border">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-2 py-1 border-r border-gray-300">Discipline</th>
+              <th class="px-2 py-1 border-r border-gray-300">Alias</th>
+              <th class="px-2 py-1 border-r border-gray-300">Category</th>
+              <th class="px-2 py-1 border-r border-gray-300">Amount</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% set ns = namespace(last_name="") %}
+            {% for sub in project.subtasks %}
+            <tr class="border-t">
+              <td class="px-2 py-1 border-r border-gray-300">
+                {% if sub.subtask_name != ns.last_name %}
+                  {{ sub.subtask_name }}
+                  {% set ns.last_name = sub.subtask_name %}
+                {% endif %}
+              </td>
+              <td class="px-2 py-1 border-r border-gray-300">
+                {% if sub.alias != ns.last_alias %}
+                  {{ sub.alias }}
+                  {% set ns.last_alias = sub.alias %}
+                {% endif %}
+              </td>
+              <td class="px-2 py-1 border-r border-gray-300">{{ sub.budget_category }}</td>
+              <td class="px-2 py-1 border-r border-gray-300">${{ "{:,.2f}".format(sub.category_amount) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+
+    <!-- Close icon -->
+    <button
+      @click="open = false"
+      class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl leading-none focus:outline-none"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+
+  </div>
+</div>

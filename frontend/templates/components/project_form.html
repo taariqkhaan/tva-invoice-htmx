@@ -1,0 +1,31 @@
+<form
+  hx-post="/projects/{% if project %}{{ project.id }}/update{% else %}create{% endif %}"
+  hx-target="#project-{{ project.id if project else '' }}"
+  hx-swap="outerHTML"
+  class="bg-white p-4 rounded shadow space-y-4"
+>
+
+  <div class="grid grid-cols-2 gap-4">
+    <input type="text" name="project_name" class="input" placeholder="Project Name" value="{{ project.project_name if project else '' }}" required>
+    <input type="text" name="wo_number" class="input" placeholder="WO Number" value="{{ project.wo_number if project else '' }}" required>
+    <input type="text" name="wo_date" class="input" placeholder="WO Date (YYYY-MM-DD)" value="{{ project.wo_date if project else '' }}" required>
+    <input type="text" name="bmcd_number" class="input" placeholder="BMCD Number" value="{{ project.bmcd_number if project else '' }}">
+  </div>
+
+  <div class="flex justify-between items-center">
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+      {% if project %}Update{% else %}Create{% endif %}
+    </button>
+
+    {% if project %}
+    <button
+      type="button"
+      class="text-gray-500 hover:underline"
+      hx-get="/projects/{{ project.id }}"
+      hx-target="#project-{{ project.id }}"
+      hx-swap="outerHTML"
+    >Cancel</button>
+    {% endif %}
+  </div>
+
+</form>

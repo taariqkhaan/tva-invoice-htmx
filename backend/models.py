@@ -1,74 +1,83 @@
-from main_database import MainBase
-from pdf_database import PdfBase
+from backend.database import MainBase, PdfBase
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
+#-----------MAIN DATABASE MODEL-----------
 
 class Project(MainBase):
-    __tablename__ = "projects"
+    __tablename__ = "projects_table"
 
     id = Column(Integer, primary_key=True, index=True)
-    wo_date = Column(String, nullable=False)
-    project_name = Column(String, nullable=False)
-    wo_number = Column(String, nullable=False)
-    bmcd_number = Column(String, nullable=False)
-    po_number = Column(String, nullable=True)
-    tao_number = Column(String, nullable=True)
-    contract_number = Column(String, nullable=True)
+    wo_date = Column(String)
+    project_name = Column(String)
+    wo_number = Column(String)
+    bmcd_number = Column(String)
+    po_number = Column(String)
+    tao_number = Column(String)
+    contract_number = Column(String)
     total_labor_amount = Column(Float, default=0.0)
     total_expenses_amount = Column(Float, default=0.0)
     total_travel_amount = Column(Float, default=0.0)
     total_tier_fee = Column(Float, default=0.0)
     total_budget_amount = Column(Float, default=0.0)
 
-    # Relationship with Subtask
     subtasks = relationship("Subtask", back_populates="project", cascade="all, delete-orphan")
+    invoices = relationship("Invoice", back_populates="project", cascade="all, delete-orphan")
 
 
 class Subtask(MainBase):
-    __tablename__ = "subtasks"
+    __tablename__ = "subtasks_table"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    subtask_name = Column(String, nullable=False)  # Required: Physical, P&C, Telecom, etc.
-    alias = Column(String, nullable=False) # B9, M2, N1 etc.
-    short_code = Column(String, nullable=False)
+    project_id = Column(Integer, ForeignKey("projects_table.id", ondelete="CASCADE"), nullable=False)
+    subtask_name = Column(String)
+    alias = Column(String)
+    short_code = Column(String)
     line_item = Column(Integer, default=0)
-    budget_category = Column(String, nullable=False) # labor, expense etc.
+    budget_category = Column(String)
     category_amount = Column(Float, default=0.0)
 
     project = relationship("Project", back_populates="subtasks")
-    invoices = relationship("Invoice", back_populates="subtask", cascade="all, delete-orphan")
+    invoice_items = relationship("InvoiceAmount", back_populates="subtask", cascade="all, delete-orphan")
 
 
 class Invoice(MainBase):
-    __tablename__ = "invoices"
+    __tablename__ = "invoices_table"
 
     id = Column(Integer, primary_key=True, index=True)
-    subtask_id = Column(Integer, ForeignKey("subtasks.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects_table.id", ondelete="CASCADE"), nullable=False)
     tier_fee_percentage = Column(Float, default=0.0)
     invoice_percentage = Column(Float, default=0.0)
+    invoice_number = Column(String)
+    invoice_through_date = Column(String)
+    invoice_creation_date = Column(String)
+
+    project = relationship("Project", back_populates="invoices")
+    invoice_items = relationship("InvoiceAmount", back_populates="invoice", cascade="all, delete-orphan")
+
+
+class InvoiceAmount(MainBase):
+    __tablename__ = "invoice_amount_table"
+
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_id = Column(Integer, ForeignKey("invoices_table.id", ondelete="CASCADE"), nullable=False)
+    subtask_id = Column(Integer, ForeignKey("subtasks_table.id", ondelete="CASCADE"), nullable=False)
     invoice_amount = Column(Float, default=0.0)
-    invoice_number = Column(String, nullable=False)
-    invoice_through_date = Column(String, nullable=False)
-    invoice_creation_date = Column(String, nullable=False)
 
-    subtask = relationship("Subtask", back_populates="invoices")
+    invoice = relationship("Invoice", back_populates="invoice_items")
+    subtask = relationship("Subtask", back_populates="invoice_items")
 
+
+
+
+#-----------DATABASE MODEL FOR TEMPORARY TEXT EXTRACTION FROM PDF-----------
 
 class ExtractedWord(PdfBase):
-    __tablename__ = "extracted_words"
+    __tablename__ = "extracted_words_table"
 
     id = Column(Integer, primary_key=True, index=True)
     word = Column(String)
-    x1 = Column(Float)
-    y1 = Column(Float)
-    x2 = Column(Float)
-    y2 = Column(Float)
     page_no = Column(Integer)
-    page_rot = Column(Integer)
-    word_rot = Column(Integer)
-    word_tag = Column(String, nullable=True)
-    item_no = Column(Integer, nullable=True)
-    color_flag = Column(Integer, nullable=True)
+    word_tag = Column(String)
+    item_no = Column(Integer)
     source_table = Column(String)

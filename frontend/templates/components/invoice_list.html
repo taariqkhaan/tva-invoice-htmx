@@ -1,0 +1,46 @@
+<div
+  x-data="{ open: true }"
+  x-show="open"
+  @click.outside="open = false"
+  class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+>
+  <div class="bg-white max-w-3xl w-full p-6 rounded-lg shadow relative">
+    <button @click="open = false" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-gray-700">&times;</button>
+
+    <h2 class="text-xl font-bold mb-4">Invoices for {{ project.project_name }}</h2>
+
+    <table class="w-full table-auto text-sm border">
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="px-4 py-2 border-r">Invoice #</th>
+          <th class="px-4 py-2 border-r">Amount</th>
+          <th class="px-4 py-2 border-r">Date</th>
+          <th class="px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+        <tr class="border-t">
+          <td class="px-4 py-2 border-r">{{ invoice.invoice_number }}</td>
+          <td class="px-4 py-2 border-r">${{ "{:,.2f}".format(invoice.invoice_amount) }}</td>
+          <td class="px-4 py-2 border-r">{{ invoice.invoice_creation_date }}</td>
+          <td class="px-4 py-2">
+            <button
+              hx-delete="/projects/{{ project.id }}/invoices/{{ invoice.invoice_number }}"
+              hx-target="closest tr"
+              hx-swap="outerHTML"
+              class="text-red-600 hover:underline"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center text-gray-500 py-4">No invoices found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

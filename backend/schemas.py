@@ -1,6 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, confloat
 from typing import List, Optional
 
+#-----------------------------------------------------------------------------------------------------------------------
+class SubtaskCreate(BaseModel):
+    subtask_name: str
+    alias: str
+    short_code: str
+    line_item: int = 0
+    budget_category: str
+    category_amount: float = 0.0
+
+    class Config:
+        from_attributes = True
 
 class SubtaskResponse(BaseModel):
     id: int
@@ -11,6 +22,23 @@ class SubtaskResponse(BaseModel):
     line_item: int
     budget_category: str
     category_amount: float
+
+    class Config:
+        from_attributes = True
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+class ProjectCreate(BaseModel):
+    wo_date: str
+    project_name: str
+    wo_number: str
+    bmcd_number: str
+    total_labor_amount: float = 0.0
+    total_expenses_amount: float = 0.0
+    total_travel_amount: float = 0.0
+    total_tier_fee: float = 0.0
+    total_budget_amount: float = 0.0
+    subtasks: Optional[List[SubtaskCreate]] = []
 
     class Config:
         from_attributes = True
@@ -31,38 +59,11 @@ class ProjectResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-# *************************** Request Models ***************************
-
-class SubtaskCreate(BaseModel):
-    subtask_name: str
-    alias: str
-    short_code: str
-    line_item: int = 0
-    budget_category: str
-    category_amount: float = 0.0
-
-    class Config:
-        from_attributes = True
-
-class ProjectCreate(BaseModel):
-    wo_date: str
-    project_name: str
-    wo_number: str
-    bmcd_number: str
-    total_labor_amount: float = 0.0
-    total_expenses_amount: float = 0.0
-    total_travel_amount: float = 0.0
-    total_tier_fee: float = 0.0
-    total_budget_amount: float = 0.0
-    subtasks: Optional[List[SubtaskCreate]] = []
-
-    class Config:
-        from_attributes = True
+#-----------------------------------------------------------------------------------------------------------------------
 
 class InvoiceCreate(BaseModel):
-    invoice_percentage: float
-    tier_fee_percentage: float
+    invoice_percentage: confloat(ge=0.0, le=100.0)
+    tier_fee_percentage: confloat(ge=0.0, le=100.0)
     invoice_through_date: str
 
     class Config:

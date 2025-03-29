@@ -1,0 +1,37 @@
+<tr id="project-{{ project.id }}" class="border-t hover:bg-gray-50">
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">{{ project.wo_date }}</td>
+  <td class="px-4 py-1 font-medium  border-r border-gray-200 whitespace-nowrap">{{ project.project_name }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">{{ project.wo_number }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">{{ project.bmcd_number }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_labor_amount) }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_tier_fee) }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_expenses_amount) }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_travel_amount) }}</td>
+  <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_budget_amount) }}</td>
+  <td class="px-4 py-1 flex gap-2 text-sm">
+
+    <a
+      href="#"
+      class="text-blue-600 hover:underline"
+      hx-get="/projects/{{ project.id }}"
+      hx-target="#project-detail"
+      hx-swap="innerHTML"
+    >Details</a>
+
+    <button
+      class="text-yellow-600 hover:underline"
+      hx-get="/projects/{{ project.id }}/edit"
+      hx-target="#project-{{ project.id }}"
+      hx-swap="outerHTML"
+    >Edit</button>
+
+    <button
+      class="text-red-600 hover:underline"
+      hx-delete="/projects/{{ project.id }}"
+      hx-target="#project-{{ project.id }}"
+      hx-swap="outerHTML"
+      hx-confirm="Are you sure?"
+    >Delete</button>
+
+  </td>
+</tr>

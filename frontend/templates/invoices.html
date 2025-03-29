@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-green-800">All Invoices</h1>
+
+<div class="overflow-x-auto border bg-white p-4 mt-6 rounded-lg shadow">
+  <table class="w-full text-sm table-auto border rounded">
+    <thead class="bg-green-100 text-gray-700">
+      <tr>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">TVA WO#</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">BMCD Project#</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Project Name</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr class="border-t">
+        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ inv.wo_number }}</td>
+        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ inv.bmcd_number }}</td>
+        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ inv.project_name }}</td>
+        <td class="px-4 py-1 flex gap-2 text-sm whitespace-nowrap">
+          <button
+            hx-get="/invoices/view/{{ inv.id }}"
+            hx-target="#invoice-list"
+            hx-swap="innerHTML"
+            class="text-blue-600 hover:underline"
+          >
+            Details
+          </button>
+          <button
+            hx-get="/invoices/create/{{ inv.id }}"
+            hx-target="#invoice-create"
+            hx-swap="innerHTML"
+            class="text-blue-600 hover:underline"
+          >
+            Create Invoice
+          </button>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-gray-500 py-4">No invoices found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
