@@ -486,6 +486,17 @@ budget_category="travel expenses"
 <table class="table-auto text-sm text-left min-w-full">
 
 
+when details link is clicked, a popup window appears with
+project inforamtion from projects_table.
+invoice information from the invoices_table matching the invoice_number.
+all infomtation from invoice_amount_table whered id matching the invoice_id.
+all infomtation from subtasks_table where id matching the subtask_id.
+
+
+
+
+
+
 
 
 

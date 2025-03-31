@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from backend.database import MainSessionLocal
-from backend.models import Project, Subtask, Invoice
+from backend.models import Project, Subtask, Invoice, InvoiceAmount
 import io
 from openpyxl import load_workbook
 import tempfile
@@ -8,6 +8,7 @@ import pythoncom
 import win32com.client
 from datetime import datetime
 import re
+import os
 
 def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_path: str) -> bytes:
     db: Session = MainSessionLocal()
@@ -16,17 +17,17 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
         if not project:
             raise Exception("Project not found")
 
-        invoice = (
-            db.query(Invoice)
-            .join(Subtask)
-            .filter(Invoice.invoice_number == invoice_number)
-            .order_by(Invoice.id.desc())
-            .first()
-        )
+        invoice = db.query(Invoice).filter(Invoice.invoice_number == invoice_number).first()
         if not invoice:
-            raise Exception("No invoice found for project")
+            raise Exception("Invoice not found")
 
-        invoice_number = invoice.invoice_number
+        invoice_items = db.query(InvoiceAmount).filter(InvoiceAmount.invoice_id == invoice.id).all()
+
+        subtask_ids = [item.subtask_id for item in invoice_items]
+        subtasks = db.query(Subtask).filter(Subtask.id.in_(subtask_ids)).all()
+
+        # Build a lookup
+        subtask_lookup = {sub.id: sub for sub in subtasks}
 
         match = re.match(r"(.+)-(\d+)", invoice_number)
         if match:
@@ -72,24 +73,19 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
 
             return cell_map
 
-        subtasks_invoices = (
-            db.query(Subtask, Invoice)
-            .join(Invoice)
-            .filter(Invoice.invoice_number == invoice_number)
-            .all()
-        )
 
         formatted_date = datetime.strptime(invoice.invoice_through_date, "%Y-%m-%d").strftime("%d-%b-%y")
         ws["J3"] = formatted_date
 
         cell_map = generate_cell_map()
 
-        for subtask, invoice in subtasks_invoices:
-            key = (subtask.subtask_name, subtask.budget_category.strip().lower())
+        for item in invoice_items:
+            sub = subtask_lookup[item.subtask_id]
+            key = (sub.subtask_name, sub.budget_category.strip().lower())
             if key in cell_map:
                 cell_line_item, cell_amount = cell_map[key]
-                ws[cell_line_item] = subtask.line_item
-                ws[cell_amount] = invoice.invoice_amount
+                ws[cell_line_item] = sub.line_item
+                ws[cell_amount] = item.invoice_amount
 
         # Save to memory
         file_stream = io.BytesIO()
@@ -112,17 +108,28 @@ def generate_invoice_pdf_bytes(project_id: int, invoice_number: str, template_pa
     tmp_pdf_path = tmp_excel_path.replace(".xlsx", ".pdf")
 
     # Step 3: Use COM to convert to PDF
-    pythoncom.CoInitialize()
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = False
-    wb = excel.Workbooks.Open(tmp_excel_path)
-    wb.ExportAsFixedFormat(0, tmp_pdf_path)  # 0 = PDF format
-    wb.Close(False)
-    excel.Quit()
-    pythoncom.CoUninitialize()
+    try:
+        pythoncom.CoInitialize()
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False
 
-    # Step 4: Read PDF and return bytes
-    with open(tmp_pdf_path, "rb") as f:
-        pdf_bytes = f.read()
+        wb = excel.Workbooks.Open(tmp_excel_path)
+        wb.ExportAsFixedFormat(0, tmp_pdf_path)  # 0 = PDF format
+        wb.Close(False)
+        excel.Quit()
+    finally:
+        pythoncom.CoUninitialize()
+
+    try:
+        with open(tmp_pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+    except Exception as e:
+        raise Exception(f"Failed to read generated PDF: {e}")
+
+    try:
+        os.remove(tmp_excel_path)
+        os.remove(tmp_pdf_path)
+    except Exception as cleanup_error:
+        print(f"Warning: Failed to clean up temp files: {cleanup_error}")
 
     return pdf_bytes

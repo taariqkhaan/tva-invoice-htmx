@@ -1,6 +1,7 @@
 from backend.database import MainBase, PdfBase
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy import Date
 
 #-----------MAIN DATABASE MODEL-----------
 

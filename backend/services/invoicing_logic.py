@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from backend.models import Project, Subtask, Invoice
+from backend.models import Project, Subtask, Invoice, InvoiceAmount
 from datetime import date
 import re
 
@@ -20,11 +20,10 @@ def generate_invoice(
     if not subtasks:
         raise ValueError("No subtasks found for this project.")
 
-    # Step 3: Determine the next invoice number
+    # Step 3: Determine next invoice number (based on project.bmcd_number)
     existing_invoice_numbers = (
         db.query(Invoice.invoice_number)
-        .join(Subtask)
-        .filter(Subtask.project_id == project_id)
+        .filter(Invoice.project_id == project_id)
         .all()
     )
 
@@ -38,46 +37,53 @@ def generate_invoice(
     next_suffix = max(suffixes, default=0) + 1
     invoice_number = f"{project.bmcd_number}-{next_suffix}"
 
-    # Step 4: Get max previously invoiced percentage for this project
+    # Step 4: Determine max previous percentage for this project
     max_previous_percentage = (
         db.query(Invoice.invoice_percentage)
-        .join(Subtask)
-        .filter(Subtask.project_id == project_id)
+        .filter(Invoice.project_id == project_id)
         .order_by(Invoice.invoice_percentage.desc())
         .first()
     )
     previous_max = max_previous_percentage[0] if max_previous_percentage else 0.0
 
-    # Calculate the delta
     delta_percentage = invoice_percentage - previous_max
     if delta_percentage <= 0:
         raise ValueError("Invoice percentage must be greater than previous maximum.")
 
+    if invoice_percentage > 100:
+        raise ValueError("Invoice percentage cannot exceed 100%.")
+
     percent = delta_percentage / 100.0
     tier_percent = tier_fee_percentage / 100.0
 
-    # Step 4: Create invoices
-    created_invoices = []
+    # Step 5: Create invoice + invoice amount entries
+    new_invoice = Invoice(
+        project_id=project_id,
+        tier_fee_percentage=tier_fee_percentage,
+        invoice_percentage=invoice_percentage,
+        invoice_number=invoice_number,
+        invoice_through_date=invoice_through_date,
+        invoice_creation_date=date.today().isoformat(),
+    )
+    db.add(new_invoice)
+    db.flush()  # So new_invoice.id is available
+
+    created_amounts = []
     for subtask in subtasks:
         amount = subtask.category_amount or 0.0
 
         if subtask.budget_category.strip().lower() == "fee":
-            invoice_amount = amount * percent * tier_percent
+            invoice_amount_value = amount * percent * tier_percent
         else:
-            invoice_amount = amount * percent
+            invoice_amount_value = amount * percent
 
-        invoice = Invoice(
+        inv_amt = InvoiceAmount(
+            invoice_id=new_invoice.id,
             subtask_id=subtask.id,
-            tier_fee_percentage=tier_fee_percentage,
-            invoice_percentage=invoice_percentage,
-            invoice_amount=round(invoice_amount, 2),
-            invoice_number=invoice_number,
-            invoice_through_date=invoice_through_date,
-            invoice_creation_date=date.today().isoformat()
+            invoice_amount=round(invoice_amount_value, 2),
         )
-
-        db.add(invoice)
-        created_invoices.append(invoice)
+        db.add(inv_amt)
+        created_amounts.append(inv_amt)
 
     db.commit()
-    return created_invoices
+    return created_amounts

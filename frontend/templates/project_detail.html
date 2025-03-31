@@ -46,7 +46,8 @@
               <th class="px-2 py-1 border-r border-gray-300">Discipline</th>
               <th class="px-2 py-1 border-r border-gray-300">Alias</th>
               <th class="px-2 py-1 border-r border-gray-300">Category</th>
-              <th class="px-2 py-1 border-r border-gray-300">Amount</th>
+              <th class="px-2 py-1 border-r border-gray-300">Approved Amount</th>
+              <th class="px-2 py-1">Remaining Amount</th>
             </tr>
           </thead>
 
@@ -68,6 +69,13 @@
               </td>
               <td class="px-2 py-1 border-r border-gray-300">{{ sub.budget_category }}</td>
               <td class="px-2 py-1 border-r border-gray-300">${{ "{:,.2f}".format(sub.category_amount) }}</td>
+              <td class="px-2 py-1">
+                {% set invoiced = invoiced_lookup.get(sub.id, 0.0) %}
+                {% set raw_unbilled = sub.category_amount - invoiced %}
+                {% set unbilled = raw_unbilled if raw_unbilled > 0 else 0.0 %}
+                ${{ "{:,.2f}".format(unbilled) }}
+              </td>
+
             </tr>
             {% endfor %}
           </tbody>

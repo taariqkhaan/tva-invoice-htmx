@@ -18,6 +18,12 @@
       hx-swap="innerHTML"
     >Details</a>
 
+    <a
+    href="/invoices/{{ project.id }}"
+    class="text-blue-600 hover:underline"
+    >Invoices</a>
+
+
     <button
       class="text-yellow-600 hover:underline"
       hx-get="/projects/{{ project.id }}/edit"

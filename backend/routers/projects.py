@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from backend.database import get_main_db
 from backend import models
+from backend.models import Project, InvoiceAmount
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -22,10 +24,27 @@ def view_project(project_id: int, request: Request, db: Session = Depends(get_ma
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    # Get all invoice amounts for subtasks in this project
+    subtask_ids = [sub.id for sub in project.subtasks]
+
+    invoice_amounts = (
+        db.query(InvoiceAmount.subtask_id, func.sum(InvoiceAmount.invoice_amount))
+        .filter(InvoiceAmount.subtask_id.in_(subtask_ids))
+        .group_by(InvoiceAmount.subtask_id)
+        .all()
+    )
+
+    # Build a lookup: subtask_id → total invoiced amount
+    invoiced_lookup = {sub_id: total or 0.0 for sub_id, total in invoice_amounts}
+
     # Sort subtasks by name, then category
     project.subtasks.sort(key=lambda s: (s.subtask_name.lower(), s.budget_category.lower()))
 
-    return templates.TemplateResponse("project_detail.html", {"request": request, "project": project})
+    return templates.TemplateResponse("project_detail.html",
+                                      {"request": request,
+                                       "project": project,
+                                       "invoiced_lookup": invoiced_lookup
+                                       })
 
 # 🔹 Show create form (if needed)
 @router.get("/create-form", response_class=HTMLResponse)
