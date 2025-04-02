@@ -41,7 +41,13 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
         prev_invoice_total = 0.0
         if previous_invoice_number:
             prev_invoices = db.query(Invoice).filter(Invoice.invoice_number == previous_invoice_number).all()
-            prev_invoice_total = round(sum(inv.invoice_amount for inv in prev_invoices), 2)
+            prev_invoice_total = round(
+                sum(
+                    sum(item.invoice_amount for item in inv.invoice_items)
+                    for inv in prev_invoices
+                ),
+                2
+            )
 
         wb = load_workbook(template_path)
         ws = wb.active

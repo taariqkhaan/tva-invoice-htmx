@@ -3,44 +3,65 @@
 {% block content %}
 
 <!-- Header Elements -->
-<div class="w-full bg-blue-600 py-4 px-4 mb-8">
+<div
+  class="w-full bg-blue-600 py-6 px-4 mb-4 bg-cover bg-center bg-no-repeat relative"
+  style="background-image: url('/static/images/burns_logo.png');"
+>
+  <div class="absolute inset-0 bg-blue-600 bg-opacity-70 z-0"></div>
+  <div class="relative z-10">
+    <div class="flex gap-4 justify-end mb-4">
+      <button
+        hx-get="/projects/upload-po-tao"
+        hx-target="#upload-pdf"
+        hx-swap="innerHTML"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+      >
+        Create Project
+      </button>
+    </div>
+    <h1 class="text-3xl font-bold text-blue-100 whitespace-nowrap">TVA Work Order & Invoice Manager</h1>
+  </div>
+</div>
 
-  <div class="flex gap-4 justify-end">
+
+<!-- Toggle Button -->
+<div class="pt-0 pl-6 pr-6" x-data="{ showActions: false }">
+
+  <!-- Table Header with Toggle Button Aligned Right -->
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-3xl font-semibold text-gray-600">Projects</h3>
     <button
-      hx-get="/projects/upload-po-tao"
-      hx-target="#upload-pdf"
-      hx-swap="innerHTML"
-      class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+      @click="showActions = !showActions"
+      class="bg-blue-200 text-gray px-4 py-2 rounded hover:bg-blue-300 whitespace-nowrap text-xs shadow"
     >
-      Create Project
+      Toggle Actions
     </button>
   </div>
-
-  <h1 class="text-3xl font-bold mt-6 text-blue-100 whitespace-nowrap">Project Dashboard</h1>
+  <!-- Projects Table -->
+  <div class="pt-0">
+  <div class="overflow-x-auto border bg-white p-4 mt-4 rounded-lg shadow">
+    <table class="w-full text-sm table-auto border rounded">
+        <thead class="bg-gray-100 text-gray-700">
+          <tr>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">PO Approval Date</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Project Name</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">TVA WO#</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">BMCD Project#</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Labor</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Tier Fee</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Non-Travel Expenses</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Travel Expenses</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Approved Amount</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap" x-show="showActions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="project-table-body" class="divide-y">
+          {% for project in projects %}
+            {% include "components/project_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+  </div>
+  {% endblock %}
 </div>
-
-<!-- Projects Table -->
-<div class="overflow-x-auto border bg-white p-4 mt-6 rounded-lg shadow">
-  <table class="w-full text-sm table-auto border rounded">
-      <thead class="bg-gray-100 text-gray-700">
-        <tr>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">PO Approval Date</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Project Name</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">TVA WO#</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">BMCD Project#</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Labor</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Tier Fee</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Non-Travel Expenses</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Travel Expenses</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Approved Amount</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="project-table-body" class="divide-y">
-        {% for project in projects %}
-          {% include "components/project_row.html" %}
-        {% endfor %}
-      </tbody>
-    </table>
-</div>
-{% endblock %}

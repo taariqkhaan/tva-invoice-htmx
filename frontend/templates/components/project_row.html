@@ -8,7 +8,7 @@
   <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_expenses_amount) }}</td>
   <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_travel_amount) }}</td>
   <td class="px-4 py-1 border-r border-gray-200 whitespace-nowrap">${{ "{:,.2f}".format(project.total_budget_amount) }}</td>
-  <td class="px-4 py-1 flex gap-2 text-sm">
+  <td class="px-4 py-1 flex gap-2 text-sm" x-show="showActions">
 
     <a
       href="#"
@@ -16,12 +16,14 @@
       hx-get="/projects/{{ project.id }}"
       hx-target="#project-detail"
       hx-swap="innerHTML"
-    >Details</a>
+      title="View Project Details"
+    >ℹ️</a>
 
     <a
     href="/invoices/{{ project.id }}"
     class="text-blue-600 hover:underline"
-    >Invoices</a>
+    title="View Invoices"
+    >💲</a>
 
 
     <button
@@ -29,7 +31,8 @@
       hx-get="/projects/{{ project.id }}/edit"
       hx-target="#project-{{ project.id }}"
       hx-swap="outerHTML"
-    >Edit</button>
+      title="Edit Project"
+    >📝</button>
 
     <button
       class="text-red-600 hover:underline"
@@ -37,7 +40,8 @@
       hx-target="#project-{{ project.id }}"
       hx-swap="outerHTML"
       hx-confirm="Are you sure?"
-    >Delete</button>
+      title="Delete Project"
+    >❌</button>
 
   </td>
 </tr>

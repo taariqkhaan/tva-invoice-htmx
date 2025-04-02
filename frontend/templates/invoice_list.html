@@ -3,37 +3,47 @@
 {% block content %}
 
 <!-- Header Elements -->
-<div class="w-full bg-blue-600 py-4 px-4 mb-8">
-  <div class="flex justify-end items-center gap-4">
+<div
+  class="w-full bg-blue-600 py-6 px-4 mb-8 bg-cover bg-center bg-no-repeat relative"
+  style="background-image: url('/static/images/burns_logo.png');"
+>
+  <!-- Dark overlay for readability -->
+  <div class="absolute inset-0 bg-blue-600 bg-opacity-70 z-0"></div>
 
-    <!-- Home Link -->
-    <a
-      href="/projects/"
-      class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
-    >
-      Home
-    </a>
+    <!-- Foreground content -->
+    <div class="relative z-10">
+    <!-- Top-right buttons -->
+    <div class="flex justify-end items-center gap-4 mb-4">
+      <!-- Home Link -->
+      <a
+        href="/projects/"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+      >
+        Home
+      </a>
 
-    <!-- Create Invoice Link -->
-    <a
-            href="#"
-      hx-get="/invoices/create/{{ project.id }}"
-      hx-target="#create-invoice"
-      hx-swap="innerHTML"
-      class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
-    >
-      Create Invoice
-    </a>
+      <!-- Create Invoice Link -->
+      <a
+        href="#"
+        hx-get="/invoices/create/{{ project.id }}"
+        hx-target="#create-invoice"
+        hx-swap="innerHTML"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+      >
+        Create Invoice
+      </a>
+    </div>
 
+    <!-- Project Name Title -->
+    <h2 class="text-2xl font-bold text-blue-100 whitespace-nowrap">
+      {{ project.project_name }}
+    </h2>
   </div>
-
-  <h2 class="text-xl font-bold mt-6 text-blue-100  whitespace-nowrap">
-    {{ project.project_name }}
-  </h2>
 </div>
 
 <!-- Invoiced Progress Bar -->
-<div class="bg-white shadow rounded p-4 mb-6">
+<div class="pt-0 pl-6 pr-6">
+<div class="bg-white shadow rounded p-4 mb-4">
   <div class="flex justify-between items-center mb-2">
     <h3 class="text-sm font-semibold text-gray-700">Invoiced: ${{ "{:,.2f}".format(total_invoiced) }} / ${{ "{:,.2f}".format(total_budget) }}</h3>
     <span class="text-xs text-gray-500">
@@ -47,75 +57,94 @@
     ></div>
   </div>
 </div>
-
-<!-- Invoice Table -->
-<div class="pt-0 pl-6 pr-6">
-<div class="overflow-x-auto border bg-white p-4 mt-6 rounded-lg shadow">
-  <table class="w-full text-sm table-auto border rounded shadow">
-    <thead class="bg-gray-100 text-gray-700">
-      <tr>
-        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Invoice #</th>
-        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Invoiced Amount</th>
-        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Invoiced</th>
-        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Service Through</th>
-        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in invoices %}
-      {% set invoice = row.invoice %}
-      <tr class="border-t">
-        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ invoice.invoice_number }}</td>
-        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">
-          ${{ "{:,.2f}".format(row.total_amount) }}
-        </td>
-        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ invoice.invoice_percentage }}</td>
-        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.formatted_through_date }}</td>
-        <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap flex gap-4 items-center">
-
-          <!-- Details Link -->
-          <a
-            href="#"
-            hx-get="/invoices/details/{{ invoice.invoice_number }}"
-            hx-target="#invoice-details"
-            hx-swap="innerHTML"
-            class="text-blue-600 hover:underline text-sm"
-          >
-            Details
-          </a>
-
-          <!-- Download Invoice -->
-          <a
-            href="#"
-            hx-get="/invoices/download-options/{{ invoice.invoice_number }}?project_id={{ project.id }}"
-            hx-target="#download-invoice"
-            hx-swap="innerHTML"
-            class="text-green-600 hover:underline text-sm"
-          >
-            Download
-          </a>
-
-          <!-- Delete Button -->
-          {% if loop.last %}
-          <form method="post" action="/invoices/delete/{{ invoice.invoice_number }}">
-            <button type="submit"
-                    class="text-red-600 hover:underline text-sm"
-                    onclick="return confirm('Are you sure you want to delete Invoice# {{ invoice.invoice_number }}?')"
-            >Delete</button>
-          </form>
-          {% endif %}
-
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="4" class="text-center text-gray-500 py-4">
-          No invoices found.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
   </div>
+
+<!-- Toggle Button -->
+<div class="pt-0 pl-6 pr-6" x-data="{ showActions: false }">
+
+  <!-- Table Header with Toggle Button Aligned Right -->
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-3xl font-semibold text-gray-600">Invoices</h3>
+    <button
+      @click="showActions = !showActions"
+      class="bg-blue-200 text-gray px-4 py-2 rounded hover:bg-blue-300 whitespace-nowrap text-xs shadow"
+    >
+      Toggle Actions
+    </button>
+  </div>
+
+  <!-- Invoice Table -->
+  <div class="pt-0 ">
+  <div class="overflow-x-auto border bg-white p-4 mt-2 rounded-lg shadow">
+    <table class="w-full text-sm table-auto border rounded shadow">
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Invoice #</th>
+          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Invoiced Amount</th>
+          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Invoiced</th>
+          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Service Through</th>
+          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap" x-show="showActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in invoices %}
+        {% set invoice = row.invoice %}
+        <tr class="border-t">
+          <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ invoice.invoice_number }}</td>
+          <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">${{ "{:,.2f}".format(row.total_amount) }}</td>
+          <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ invoice.invoice_percentage }}</td>
+          <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.formatted_through_date }}</td>
+
+          <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap flex gap-4 items-center" x-show="showActions">
+            <!-- Details Link -->
+            <a
+              href="#"
+              hx-get="/invoices/details/{{ invoice.invoice_number }}"
+              hx-target="#invoice-details"
+              hx-swap="innerHTML"
+              class="text-blue-600 hover:underline text-sm"
+              title="View Invoice Details"
+            >
+              ℹ️
+            </a>
+
+            <!-- Download Invoice -->
+            <a
+              href="#"
+              hx-get="/invoices/download-options/{{ invoice.invoice_number }}?project_id={{ project.id }}"
+              hx-target="#download-invoice"
+              hx-swap="innerHTML"
+              class="text-blue-600 hover:underline text-sm"
+              title="Download Invoice"
+            >
+              💾
+            </a>
+
+            <!-- Delete Button -->
+            {% if loop.last %}
+            <form method="post" action="/invoices/delete/{{ invoice.invoice_number }}">
+              <button type="submit"
+                      class="text-blue-600 hover:underline text-sm"
+                      onclick="return confirm('Are you sure you want to delete Invoice# {{ invoice.invoice_number }}?')"
+                      title="Delete Invoice"
+              >❌</button>
+            </form>
+            {% endif %}
+
+          </td>
+
+
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center text-gray-500 py-4">
+            No invoices found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endblock %}
 </div>
-{% endblock %}
