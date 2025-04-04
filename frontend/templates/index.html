@@ -16,8 +16,19 @@
         hx-swap="innerHTML"
         class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
       >
-        Create Project
+        Create Project from Files
       </button>
+
+      <button
+        hx-get="/projects/create-blank"
+        hx-target="#project-detail"
+        hx-swap="innerHTML"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+      >
+        Create Blank Project
+      </button>
+
+
     </div>
     <h1 class="text-3xl font-bold text-blue-100 whitespace-nowrap">TVA Work Order & Invoice Manager</h1>
   </div>
