@@ -17,11 +17,16 @@
 
     <!-- Form -->
     <form
-        hx-post="{% if is_new %}/projects/create-blank{% else %}/projects/{{ project.id }}/update{% endif %}"
-        hx-target="{% if is_new %}#project-table-body{% else %}#project-{{ project.id }}{% endif %}"
+        hx-post="/projects/create-blank"
+        hx-target="#project-table-body"
         hx-swap="beforeend"
+        hx-on="htmx:afterRequest: closeAndReloadProjects()"
         class="space-y-6"
       >
+      {% if not is_new %}
+          <input type="hidden" id="delete_project_id" value="{{ project.id }}">
+      {% endif %}
+
 
       <h2 class="text-2xl font-semibold mb-4">Edit Project & Subtasks</h2>
 
@@ -34,36 +39,42 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA WO#:</label>
-          <input type="text" name="wo_number" value="{{ project.wo_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">PO Approval Date:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Purchase Order Approval Date:</label>
           <input type="date" name="wo_date" value="{{ project.wo_date }}"
                  class="border border-gray-300 rounded px-3 py-2 w-full"
                  placeholder="PO Approval Date">
         </div>
 
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Task Assignment Order#:</label>
+          <input type="text" name="tao_number" value="{{ project.tao_number }}"
+                 class="border border-gray-300 rounded px-3 py-2 w-full">
+        </div>
 
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Purchase Order#:</label>
+          <input type="text" name="po_number" value="{{ project.po_number }}"
+                 class="border border-gray-300 rounded px-3 py-2 w-full">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Work Order#:</label>
+          <input type="text" name="wo_number" value="{{ project.wo_number }}"
+                 class="border border-gray-300 rounded px-3 py-2 w-full">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Contract#:</label>
+          <input type="text" name="contract_number" value="{{ project.contract_number }}"
+                 class="border border-gray-300 rounded px-3 py-2 w-full">
+        </div>
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">BMCD Project#:</label>
           <input type="text" name="bmcd_number" value="{{ project.bmcd_number }}"
                  class="border border-gray-300 rounded px-3 py-2 w-full">
         </div>
 
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA PO#:</label>
-          <input type="text" name="bmcd_number" value="{{ project.po_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
-        </div>
 
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Contract#:</label>
-          <input type="text" name="bmcd_number" value="{{ project.contract_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
-        </div>
       </div>
 
 

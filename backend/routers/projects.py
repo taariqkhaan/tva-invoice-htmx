@@ -7,6 +7,7 @@ from backend.database import get_main_db
 from backend import models
 from backend.models import Project, InvoiceAmount
 from backend.schemas import ProjectCreate, SubtaskCreate
+from backend.services.blank_project_calc import calculate_totals
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -30,19 +31,20 @@ def show_blank_project(request: Request):
             default_subtasks.append(SubtaskCreate(
                 subtask_name=discipline_name,
                 alias=alias,
-                short_code="N/A",
+                short_code="NA",
                 line_item=0,
                 budget_category=category
             ))
 
     default_project = {
         "id": 0,
-        "project_name": "N/A",
-        "wo_number": "N/A",
+        "project_name": "NA",
+        "wo_number": "NA",
         "wo_date": "",
-        "bmcd_number": "N/A",
-        "po_number": "N/A",
-        "contract_number": "N/A",
+        "bmcd_number": "000000",
+        "po_number": "NA",
+        "tao_number": "NA",
+        "contract_number": "NA",
         "subtasks": default_subtasks
     }
 
@@ -138,11 +140,19 @@ def show_full_edit_modal(project_id: int, request: Request, db: Session = Depend
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.invoices and len(project.invoices) > 0:
+        return templates.TemplateResponse("components/error_edit.html", {
+            "request": request,
+            "message": "Editing project will cause data mismatch in existing invoices."
+                       " Please delete all existing invoices to proceed."
+        })
+
     return templates.TemplateResponse("components/project_edit.html", {
         "request": request,
-        "project": project
+        "project": project,
+        "is_new": False
     })
-
 
 
 @router.post("/create-blank", response_class=HTMLResponse)
@@ -154,6 +164,7 @@ async def create_blank_project(
     wo_date: str = Form(...),
     bmcd_number: str = Form(...),
     po_number: str = Form(...),
+    tao_number: str = Form(...),
     contract_number: str = Form(...),
     subtask_name: list[str] = Form(default=[]),
     alias: list[str] = Form(default=[]),
@@ -162,18 +173,21 @@ async def create_blank_project(
     budget_category: list[str] = Form(default=[]),
     category_amount: list[float] = Form(default=[]),
 ):
+    totals = calculate_totals(budget_category, category_amount)
+
     new_project = models.Project(
         project_name=project_name,
         wo_number=wo_number,
         wo_date=wo_date,
         bmcd_number=bmcd_number,
         po_number=po_number,
+        tao_number=tao_number,
         contract_number=contract_number,
-        total_labor_amount=0.0,
-        total_expenses_amount=0.0,
-        total_travel_amount=0.0,
-        total_tier_fee=0.0,
-        total_budget_amount=0.0
+        total_labor_amount=totals["labor"],
+        total_tier_fee=totals["fee"],
+        total_expenses_amount=totals["expenses"],
+        total_travel_amount=totals["travel"],
+        total_budget_amount=totals["budget"]
     )
 
     db.add(new_project)
