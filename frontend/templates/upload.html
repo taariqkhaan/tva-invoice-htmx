@@ -31,7 +31,9 @@
         <label class="block text-sm font-medium mb-1">BMCD Project Number</label>
         <input
           name="form_number"
+          type="text"
           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-200"
+          pattern="^\d{6}$" maxlength="6" minlength="6"
           required
         />
       </div>

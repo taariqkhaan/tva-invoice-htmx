@@ -66,6 +66,14 @@ def get_invoice_form(project_id: int, request: Request, db: Session = Depends(ge
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    # Check if total budget is 0
+    if project.total_budget_amount == 0:
+        return templates.TemplateResponse("components/error_modal.html", {
+            "request": request,
+            "message": "Total approved amount is $0."
+                       " Go to project home and edit project to update approved amounts."
+        })
+
     latest_invoice = (
         db.query(Invoice)
         .filter(Invoice.project_id == project_id)
@@ -75,7 +83,7 @@ def get_invoice_form(project_id: int, request: Request, db: Session = Depends(ge
 
     last_percentage = latest_invoice.invoice_percentage if latest_invoice else 0.0
 
-    return templates.TemplateResponse("components/invoice_form.html", {
+    return templates.TemplateResponse("components/invoice_create.html", {
         "request": request,
         "project": project,
         "last_percentage": last_percentage
@@ -106,7 +114,7 @@ def create_invoice(
         )
     except ValueError as e:
         project = db.query(Project).filter(Project.id == project_id).first()
-        return templates.TemplateResponse("components/invoice_form.html", {
+        return templates.TemplateResponse("components/invoice_create.html", {
             "request": request,
             "error": str(e),
             "project": project

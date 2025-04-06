@@ -23,12 +23,18 @@
         hx-on="htmx:afterRequest: closeAndReloadProjects()"
         class="space-y-6"
       >
+
+      <h2 class="text-2xl font-semibold mb-4">
+        {% if is_new %}
+          Create New Project
+        {% else %}
+          Edit Project & Subtasks
+        {% endif %}
+      </h2>
+
       {% if not is_new %}
           <input type="hidden" id="delete_project_id" value="{{ project.id }}">
       {% endif %}
-
-
-      <h2 class="text-2xl font-semibold mb-4">Edit Project & Subtasks</h2>
 
       <!-- Project Fields -->
       <div class="grid grid-cols-2 gap-4">
@@ -40,7 +46,9 @@
 
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Purchase Order Approval Date:</label>
-          <input type="date" name="wo_date" value="{{ project.wo_date }}"
+          <input type="text" name="wo_date" value="{{ project.wo_date }}"
+                 pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/\d{4}"
+                 placeholder="MM/DD/YYYY"
                  class="border border-gray-300 rounded px-3 py-2 w-full"
                  placeholder="PO Approval Date">
         </div>
@@ -71,6 +79,7 @@
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">BMCD Project#:</label>
           <input type="text" name="bmcd_number" value="{{ project.bmcd_number }}"
+                 pattern="^\d{6}$" maxlength="6" minlength="6"
                  class="border border-gray-300 rounded px-3 py-2 w-full">
         </div>
 

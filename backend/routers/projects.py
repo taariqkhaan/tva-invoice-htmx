@@ -2,17 +2,20 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from backend.database import get_main_db
+from sqlalchemy import func, text
+from backend.database import get_main_db, MainEngine
 from backend import models
 from backend.models import Project, InvoiceAmount
 from backend.schemas import ProjectCreate, SubtaskCreate
 from backend.services.blank_project_calc import calculate_totals
+from datetime import datetime
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 templates = Jinja2Templates(directory="frontend/templates")
 
+#==============================================GET======================================================================
 
+# Get default values to create a blank project
 @router.get("/create-blank", response_class=HTMLResponse)
 def show_blank_project(request: Request):
     from backend.schemas import SubtaskCreate
@@ -54,15 +57,24 @@ def show_blank_project(request: Request):
         "is_new": True
     })
 
-
-
-# 🔹 Render all projects
+# Get all projects
 @router.get("/", response_class=HTMLResponse)
-def list_projects(request: Request, db: Session = Depends(get_main_db)):
-    projects = db.query(models.Project).all()
-    return templates.TemplateResponse("index.html", {"request": request, "projects": projects})
+def list_projects(request: Request, db: Session = Depends(get_main_db), page: int = 1, limit: int = 33):
 
-# 🔹 Return project card (used by HTMX create)
+    offset = (page - 1) * limit
+    total_projects = db.query(models.Project).count()
+    projects = db.query(models.Project).offset(offset).limit(limit).all()
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "projects": projects,
+        "page": page,
+        "limit": limit,
+        "total_projects": total_projects,
+        "total_pages": (total_projects + limit - 1) // limit
+    })
+
+# Get project details
 @router.get("/{project_id}", response_class=HTMLResponse)
 def view_project(project_id: int, request: Request, db: Session = Depends(get_main_db)):
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
@@ -85,22 +97,42 @@ def view_project(project_id: int, request: Request, db: Session = Depends(get_ma
     # Sort subtasks by name, then category
     project.subtasks.sort(key=lambda s: (s.subtask_name.lower(), s.budget_category.lower()))
 
-    return templates.TemplateResponse("project_detail.html",
+    return templates.TemplateResponse("project_details.html",
                                       {"request": request,
                                        "project": project,
                                        "invoiced_lookup": invoiced_lookup
                                        })
 
-# 🔹 Show create form (if needed)
-@router.get("/create-form", response_class=HTMLResponse)
-def show_create_form(request: Request):
-    return templates.TemplateResponse("components/project_form.html", {"request": request})
 
-# 🔹 Create new project
+# Get existing project data to edit project
+@router.get("/{project_id}/edit", response_class=HTMLResponse)
+def show_full_edit_modal(project_id: int, request: Request, db: Session = Depends(get_main_db)):
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.invoices and len(project.invoices) > 0:
+        return templates.TemplateResponse("components/error_modal.html", {
+            "request": request,
+            "message": "Editing project will cause data mismatch in existing invoices."
+                       " Please delete all existing invoices to proceed."
+        })
+
+    return templates.TemplateResponse("components/project_edit.html", {
+        "request": request,
+        "project": project,
+        "is_new": False
+    })
+
+#=======================================================================================================================
+
+
+
+#==============================================POST=====================================================================
+
+# Create new project from files
 @router.post("/create", response_class=HTMLResponse)
-async def create_project(
-    request: Request,
-    db: Session = Depends(get_main_db),
+async def create_project(request: Request, db: Session = Depends(get_main_db),
     project_name: str = Form(...),
     wo_number: str = Form(...),
     wo_date: str = Form(...),
@@ -120,45 +152,11 @@ async def create_project(
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
-    return templates.TemplateResponse("components/project_row.html", {"request": request, "project": new_project})
+    return templates.TemplateResponse("components/project_list.html", {"request": request, "project": new_project})
 
-
-# 🔹 Delete project
-@router.delete("/{project_id}", response_class=HTMLResponse)
-def delete_project(project_id: int, db: Session = Depends(get_main_db)):
-    project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    db.delete(project)
-    db.commit()
-
-    return HTMLResponse(content="")  # HTMX will remove the card from the DOM
-
-@router.get("/{project_id}/edit", response_class=HTMLResponse)
-def show_full_edit_modal(project_id: int, request: Request, db: Session = Depends(get_main_db)):
-    project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    if project.invoices and len(project.invoices) > 0:
-        return templates.TemplateResponse("components/error_edit.html", {
-            "request": request,
-            "message": "Editing project will cause data mismatch in existing invoices."
-                       " Please delete all existing invoices to proceed."
-        })
-
-    return templates.TemplateResponse("components/project_edit.html", {
-        "request": request,
-        "project": project,
-        "is_new": False
-    })
-
-
+# Create new blank project
 @router.post("/create-blank", response_class=HTMLResponse)
-async def create_blank_project(
-    request: Request,
-    db: Session = Depends(get_main_db),
+async def create_blank_project(request: Request, db: Session = Depends(get_main_db),
     project_name: str = Form(...),
     wo_number: str = Form(...),
     wo_date: str = Form(...),
@@ -208,10 +206,33 @@ async def create_blank_project(
     db.commit()
     db.refresh(new_project)
 
-    return templates.TemplateResponse("components/project_row.html", {
+    return templates.TemplateResponse("components/project_list.html", {
         "request": request,
         "project": new_project
     })
+
+#=======================================================================================================================
+
+
+
+#==============================================DELETE===================================================================
+
+# Delete project
+@router.delete("/{project_id}", response_class=HTMLResponse)
+def delete_project(project_id: int, db: Session = Depends(get_main_db)):
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.delete(project)
+    db.commit()
+
+    with MainEngine.connect() as conn:
+        conn.execute(text("VACUUM"))
+
+    return HTMLResponse(content="")
+
+#=======================================================================================================================
 
 
 
