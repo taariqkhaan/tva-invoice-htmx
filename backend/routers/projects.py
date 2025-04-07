@@ -9,6 +9,7 @@ from backend.models import Project, InvoiceAmount
 from backend.schemas import ProjectCreate, SubtaskCreate
 from backend.services.blank_project_calc import calculate_totals
 from datetime import datetime
+from starlette.requests import Request as StarletteRequest
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -59,15 +60,33 @@ def show_blank_project(request: Request):
 
 # Get all projects
 @router.get("/", response_class=HTMLResponse)
-def list_projects(request: Request, db: Session = Depends(get_main_db), page: int = 1, limit: int = 33):
+def list_projects(request: Request, db: Session = Depends(get_main_db),
+                  search: str = "", page: int = 1, limit: int = 33):
 
     offset = (page - 1) * limit
-    total_projects = db.query(models.Project).count()
-    projects = db.query(models.Project).offset(offset).limit(limit).all()
+    query = db.query(models.Project)
+
+    # Apply search filter
+    if search:
+        query = query.filter(
+            models.Project.project_name.ilike(f"%{search}%") |
+            models.Project.bmcd_number.ilike(f"%{search}%") |
+            models.Project.wo_date.ilike(f"%{search}%")
+        )
+
+    total_projects = query.count()
+    projects = query.offset(offset).limit(limit).all()
+
+    if request.headers.get("HX-Request") == "true":
+        return templates.TemplateResponse("components/project_table.html", {
+            "request": request,
+            "projects": projects
+        })
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "projects": projects,
+        "search": search,
         "page": page,
         "limit": limit,
         "total_projects": total_projects,

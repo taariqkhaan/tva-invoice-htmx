@@ -4,78 +4,122 @@
 
 <!-- Header Elements -->
 <div
-  class="w-full bg-blue-600 py-6 px-4 mb-4 bg-cover bg-center bg-no-repeat relative"
+  class="w-full bg-blue-600 py-10 px-0 mb-6 bg-cover bg-center bg-no-repeat relative"
   style="background-image: url('/static/images/burns_logo.png');"
 >
+  <!-- Overlay -->
   <div class="absolute inset-0 bg-blue-600 bg-opacity-70 z-0"></div>
-    <div class="relative z-10">
 
-      <!-- Homepage create project buttons -->
-      <div class="flex gap-4 justify-end mb-4">
-        <!-- Create project from files -->
-        <button
-          hx-get="/projects/upload-po-tao"
-          hx-target="#upload-pdf"
-          hx-swap="innerHTML"
-          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
-        >
-          Create Project from Files
-        </button>
+  <!-- Foreground content -->
+  <div class="relative z-10">
+    <!-- Main layout -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-        <!-- Create blank project -->
-        <button
-          hx-get="/projects/create-blank"
-          hx-target="#project-detail"
-          hx-swap="innerHTML"
-          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
-        >
-          Create Blank Project
-        </button>
+      <!-- LEFT: Title -->
+      <div class="pl-6 md:pl-6">
+        <h1 class="text-3xl font-bold text-white  whitespace-nowrap">
+          TVA Work Order & Invoice Manager
+        </h1>
       </div>
 
-      <!-- Homepage title -->
-      <h1 class="text-3xl font-bold text-blue-100 whitespace-nowrap">TVA Work Order & Invoice Manager</h1>
+      <!-- Search -->
+        <input
+          type="text"
+          name="search"
+          placeholder="Search by Name, Date, WO or BMCD Project#"
+          class="w-full md:w-96 border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+          hx-get="/projects/"
+          hx-target="#project-table-body"
+          hx-trigger="keyup changed delay:200ms"
+          hx-params="search"
+        />
 
+      <!-- Create Buttons -->
+      <div class="pr-6 flex flex-col md:flex-row md:items-center gap-4">
+        <!-- Buttons -->
+        <div class="flex gap-6">
+          <button
+            hx-get="/projects/upload-po-tao"
+            hx-target="#upload-pdf"
+            hx-swap="innerHTML"
+            class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+          >
+            Create Project from Files
+          </button>
+
+          <button
+            hx-get="/projects/create-blank"
+            hx-target="#project-detail"
+            hx-swap="innerHTML"
+            class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 whitespace-nowrap"
+          >
+            Create Blank Project
+          </button>
+        </div>
+
+
+      </div>
     </div>
+  </div>
 </div>
 
-<div class="pt-3 pl-6 pr-6">
 
-  <!-- Projects Table -->
-    <table class="w-full text-sm table-auto border border-gray-300 rounded bg-white shadow">
-      <thead class="bg-gray-100 text-gray-700">
-        <tr>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">PO Approval Date</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Project Name</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">TVA WO#</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">BMCD Project#</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Labor</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Tier Fee</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Non-Travel Expenses</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Travel Expenses</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Approved Amount</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="project-table-body" class="divide-y">
-        {% for project in projects %}
-          {% include "components/project_list.html" %}
-        {% endfor %}
-      </tbody>
-    </table>
 
-  <!-- Projects page navigation -->
-  <div class="flex justify-center items-center mt-6 space-x-4">
-    {% if page > 1 %}
-      <a href="/projects/?page={{ page - 1 }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm">← Prev</a>
-    {% endif %}
 
-    <span class="text-sm text-gray-700">Page {{ page }} of {{ total_pages }}</span>
 
-    {% if page < total_pages %}
-      <a href="/projects/?page={{ page + 1 }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm">Next →</a>
+
+
+
+<div id="project-table-container">
+  <div class="pt-3 pl-6 pr-6">
+    {% if projects %}
+      <!-- Projects Table -->
+      <table class="w-full text-sm table-auto border border-gray-300 rounded bg-white shadow">
+        <thead class="bg-gray-200 text-gray-700">
+          <tr>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">PO Approval Date</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Project Name</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">TVA WO#</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">BMCD Project#</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Labor</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Tier Fee</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Non-Travel Expenses</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Travel Expenses</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Approved Amount</th>
+            <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="project-table-body" class="divide-y">
+           {% include "components/project_table.html" %}
+        </tbody>
+      </table>
+
+      <!-- Projects page navigation -->
+      <div class="flex justify-center items-center mt-6 space-x-4">
+        {% if page > 1 %}
+          <a href="/projects/?page={{ page - 1 }}&search={{ search }}"
+             class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm">
+            ← Prev
+          </a>
+        {% endif %}
+
+        <span class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-800 text-sm
+          font-medium rounded border border-gray-300 shadow-sm">
+              Page {{ page }} of {{ total_pages }}
+        </span>
+
+        {% if page < total_pages %}
+          <a href="/projects/?page={{ page + 1 }}&search={{ search }}"
+             class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm">
+            Next →
+          </a>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="bg-white border border-gray-300 p-6 rounded shadow text-center text-gray-500">
+        No projects found.
+      </div>
     {% endif %}
   </div>
-
-  {% endblock %}
 </div>
+{% endblock %}

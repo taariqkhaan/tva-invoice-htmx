@@ -38,10 +38,10 @@
 
       <!-- Project Fields -->
       <div class="grid grid-cols-2 gap-4">
-        <div>
+        <div class="col-span-2">
           <label class="block text-sm font-semibold text-gray-700 mb-1">Project Name:</label>
           <input type="text" name="project_name" value="{{ project.project_name }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
 
         <div>
@@ -49,48 +49,45 @@
           <input type="text" name="wo_date" value="{{ project.wo_date }}"
                  pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/\d{4}"
                  placeholder="MM/DD/YYYY"
-                 class="border border-gray-300 rounded px-3 py-2 w-full"
+                 class="border border-gray-300 rounded px-3 py-1 w-full"
                  placeholder="PO Approval Date">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Task Assignment Order#:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Task Assignment Order:</label>
           <input type="text" name="tao_number" value="{{ project.tao_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Purchase Order#:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Purchase Order:</label>
           <input type="text" name="po_number" value="{{ project.po_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Work Order#:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Work Order:</label>
           <input type="text" name="wo_number" value="{{ project.wo_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Contract#:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">TVA Contract:</label>
           <input type="text" name="contract_number" value="{{ project.contract_number }}"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">BMCD Project#:</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">BMCD Project:</label>
           <input type="text" name="bmcd_number" value="{{ project.bmcd_number }}"
                  pattern="^\d{6}$" maxlength="6" minlength="6"
-                 class="border border-gray-300 rounded px-3 py-2 w-full">
+                 class="border border-gray-300 rounded px-3 py-1 w-full">
         </div>
-
-
       </div>
 
 
-
      <!-- Subtasks -->
-      <h3 class="text-lg font-semibold mt-6">Subtasks</h3>
-        <div class="space-y-2">
+      <h3 class="text-lg font-semibold mt-4">Subtasks</h3>
+        <div class="space-y-0">
 
           <!-- Header Row -->
           <div class="grid grid-cols-6 gap-2 text-sm text-gray-600 font-semibold px-1">
@@ -105,7 +102,7 @@
           {% set sorted_subtasks = project.subtasks | sort(attribute='budget_category') | sort(attribute='subtask_name') %}
 
           {% for sub in sorted_subtasks %}
-          <div class="grid grid-cols-6 gap-2 border border-gray-200 rounded-md bg-gray-50 px-3 py-2 items-center">
+          <div class="grid grid-cols-6 gap-1 rounded-md px-1 py-1 items-center">
             <input type="text" name="subtask_name" value="{{ sub.subtask_name }}"
                    class="border border-gray-300 rounded px-2 py-1 w-full text-sm bg-gray-100 cursor-not-allowed"
                    readonly placeholder="Discipline">
@@ -127,7 +124,7 @@
         </div>
 
       <!-- Submit -->
-      <div class="text-right mt-6">
+      <div class="text-right mt-4">
         <button type="submit"
                 class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700">
           Save Changes

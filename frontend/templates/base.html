@@ -16,9 +16,25 @@
     .input {
       @apply border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring focus:ring-blue-200;
     }
+
+      /* Remove number input spinners (up/down arrows) */
+
+      /* Chrome, Safari, Edge, Opera */
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* Firefox */
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
   </style>
+
+
 </head>
-<body class="bg-gray-100 text-gray-600">
+<body class="bg-gray-50 text-gray-600">
   <main class="p-0 m-0">
   {% block content %}{% endblock %}
   </main>
@@ -27,8 +43,8 @@
    <div id="edit-project"></div>
   <div id="upload-pdf" class="z-50"></div>
   <div id="invoice-list"></div>
-  <div id="invoice-details"></div>
   <div id="create-invoice"></div>
+  <div id="invoice-details"></div>
   <div id="download-invoice"></div>
 
  <script>

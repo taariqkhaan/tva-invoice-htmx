@@ -1,0 +1,11 @@
+{% if projects %}
+  {% for project in projects %}
+    {% include "components/project_list.html" %}
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="10" class="text-center text-gray-500 py-4">
+      No projects found.
+    </td>
+  </tr>
+{% endif %}

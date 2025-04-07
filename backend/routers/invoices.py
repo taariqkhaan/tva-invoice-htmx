@@ -66,6 +66,16 @@ def get_invoice_form(project_id: int, request: Request, db: Session = Depends(ge
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    # Calculate total invoice % already billed
+    total_invoiced_pct = sum(invoice.invoice_percentage for invoice in project.invoices)
+
+    # Prevent creating invoice at or above 100%
+    if total_invoiced_pct >= 100:
+        return templates.TemplateResponse("components/error_modal.html", {
+            "request": request,
+            "message": "Cannot create invoice: 100% of the project has already been invoiced."
+        })
+
     # Check if total budget is 0
     if project.total_budget_amount == 0:
         return templates.TemplateResponse("components/error_modal.html", {
@@ -119,6 +129,8 @@ def create_invoice(
             "error": str(e),
             "project": project
         })
+
+
 
 @router.get("/invoices/details/{invoice_number}", response_class=HTMLResponse)
 def view_invoice_details(invoice_number: str, request: Request, db: Session = Depends(get_main_db)):

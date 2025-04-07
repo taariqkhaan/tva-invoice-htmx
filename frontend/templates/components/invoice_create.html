@@ -22,7 +22,13 @@
       <div class="bg-red-100 text-red-700 p-3 rounded mb-4">{{ error }}</div>
     {% endif %}
 
-    <form action="/invoices/create/{{ project.id }}" method="post" class="space-y-4">
+    <form
+        hx-post="/invoices/create/{{ project.id }}"
+        hx-target="#invoice-table-body"
+        hx-swap="innerHTML"
+        class="space-y-4"
+      >
+
       <div>
         <div class="flex justify-between items-center mb-1">
           <label class="text-sm font-medium">Invoice %</label>
@@ -39,24 +45,43 @@
                       rounded focus:outline-none focus:ring focus:ring-blue-200"
                required/>
 
-        <label class="block text-sm font-medium mb-1">Max Tier Fee %</label>
-        <select
-          name="tier_fee_percentage"
-          class="w-full px-3 py-2 mb-6 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-200"
-          required
-        >
-          <option value="" disabled selected>Select a value</option>
-          <option value="33">33</option>
-          <option value="100">100</option>
-        </select>
+        {% if is_first_invoice %}
+          <label class="block text-sm font-medium mb-1">Max Tier Fee %</label>
+          <select
+            name="tier_fee_percentage"
+            class="w-full px-3 py-2 mb-6 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-200"
+            required
+          >
+            <option value="" disabled selected>Select a value</option>
+            <option value="33">33</option>
+            <option value="100">100</option>
+          </select>
+        {% else %}
+        <!-- Hidden input: reuse the first invoice's tier_fee_percentage -->
+          <input type="hidden" name="tier_fee_percentage" value="{{ existing_tier_fee }}">
+        {% endif %}
 
+     <label for="invoice_through_date" class="block text-sm font-medium mb-1">
+        Service Through:
+      </label>
 
-        <label class="block text-sm font-medium mb-1">Service Through:</label>
-        <input name="invoice_through_date"
-               type="date"
-               class="w-full px-3 py-2 mb-6 border border-gray-300
-                      rounded focus:outline-none focus:ring focus:ring-blue-200"
-               required/>
+      <input
+        id="invoice_through_date"
+        name="invoice_through_date"
+        type="date"
+        class="w-full px-3 py-2 mb-1 border rounded focus:outline-none focus:ring
+          {% if date_error %}
+            border-red-500 ring-red-300
+          {% else %}
+            border-gray-300 focus:ring-blue-200
+          {% endif %}"
+        required
+      />
+
+      {% if date_error %}
+        <p class="text-sm text-red-600 mt-1">{{ date_error }}</p>
+      {% endif %}
+
       </div>
 
       <!-- Submit Button Centered with Margin -->
