@@ -1,14 +1,17 @@
-from sqlalchemy.orm import Session
-from backend.database import MainSessionLocal
-from backend.models import Project, Subtask, Invoice, InvoiceAmount
 import io
-from openpyxl import load_workbook
+import re
+import os
 import tempfile
 import pythoncom
 import win32com.client
+from openpyxl import load_workbook
 from datetime import datetime
-import re
-import os
+from decimal import Decimal, ROUND_HALF_UP
+from sqlalchemy.orm import Session
+from backend.database import MainSessionLocal
+from backend.models import Project, Subtask, Invoice, InvoiceAmount
+
+
 
 def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_path: str) -> bytes:
     db: Session = MainSessionLocal()
@@ -38,22 +41,19 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
             previous_invoice_number = None
 
         # Get previous invoice total
-        prev_invoice_total = 0.0
+        prev_invoice_total = 0.00
         if previous_invoice_number:
             prev_invoices = db.query(Invoice).filter(Invoice.invoice_number == previous_invoice_number).all()
-            prev_invoice_total = round(
-                sum(
-                    sum(item.invoice_amount for item in inv.invoice_items)
-                    for inv in prev_invoices
-                ),
-                2
-            )
+            prev_invoice_total = sum(
+                sum(Decimal(str(item.invoice_amount)) for item in inv.invoice_items)
+                for inv in prev_invoices
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         wb = load_workbook(template_path)
         ws = wb.active
 
         # Header
-        ws["K48"] = prev_invoice_total
+        ws["K48"] = float(prev_invoice_total)
         ws["C3"] = project.bmcd_number
         ws["C4"] = invoice_number
         ws["C5"] = project.contract_number
@@ -61,7 +61,7 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
         ws["C7"] = f"{project.tao_number}-{project.po_number}"
         ws["C8"] = project.wo_number
         ws["C9"] = project.project_name
-        ws["C10"] = project.total_budget_amount
+        ws["C10"] = float(project.total_budget_amount or 0)
 
         def generate_cell_map():
             base_row_map = {
@@ -91,7 +91,7 @@ def generate_invoice_excel_bytes(project_id: int, invoice_number: str, template_
             if key in cell_map:
                 cell_line_item, cell_amount = cell_map[key]
                 ws[cell_line_item] = sub.line_item
-                ws[cell_amount] = item.invoice_amount
+                ws[cell_amount] = float(item.invoice_amount or 0)
 
         # Save to memory
         file_stream = io.BytesIO()

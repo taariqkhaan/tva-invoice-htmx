@@ -6,10 +6,9 @@ from sqlalchemy import func, text
 from backend.database import get_main_db, MainEngine
 from backend import models
 from backend.models import Project, InvoiceAmount
-from backend.schemas import ProjectCreate, SubtaskCreate
 from backend.services.blank_project_calc import calculate_totals
-from datetime import datetime
-from starlette.requests import Request as StarletteRequest
+from decimal import Decimal, InvalidOperation
+
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -111,7 +110,8 @@ def view_project(project_id: int, request: Request, db: Session = Depends(get_ma
     )
 
     # Build a lookup: subtask_id → total invoiced amount
-    invoiced_lookup = {sub_id: total or 0.0 for sub_id, total in invoice_amounts}
+    invoiced_lookup = {sub_id: Decimal(str(total)) if total is not None else Decimal("0.00") for sub_id, total in invoice_amounts}
+
 
     # Sort subtasks by name, then category
     project.subtasks.sort(key=lambda s: (s.subtask_name.lower(), s.budget_category.lower()))
@@ -162,11 +162,11 @@ async def create_project(request: Request, db: Session = Depends(get_main_db),
         wo_number=wo_number,
         wo_date=wo_date,
         bmcd_number=bmcd_number,
-        total_labor_amount=0.0,
-        total_expenses_amount=0.0,
-        total_travel_amount=0.0,
-        total_tier_fee=0.0,
-        total_budget_amount=0.0
+        total_labor_amount= Decimal("0.00"),
+        total_expenses_amount=Decimal("0.00"),
+        total_travel_amount=Decimal("0.00"),
+        total_tier_fee=Decimal("0.00"),
+        total_budget_amount=Decimal("0.00")
     )
     db.add(new_project)
     db.commit()
@@ -188,9 +188,16 @@ async def create_blank_project(request: Request, db: Session = Depends(get_main_
     short_code: list[str] = Form(default=[]),
     line_item: list[int] = Form(default=[]),
     budget_category: list[str] = Form(default=[]),
-    category_amount: list[float] = Form(default=[]),
+    category_amount: list[str] = Form(default=[])
 ):
-    totals = calculate_totals(budget_category, category_amount)
+    category_amount_decimal = []
+    for value in category_amount:
+        try:
+            category_amount_decimal.append(Decimal(value))
+        except InvalidOperation:
+            category_amount_decimal.append(Decimal("0.00"))
+
+    totals = calculate_totals(budget_category, category_amount_decimal)
 
     new_project = models.Project(
         project_name=project_name,
@@ -217,7 +224,7 @@ async def create_blank_project(request: Request, db: Session = Depends(get_main_
             short_code=short_code[i],
             line_item=line_item[i],
             budget_category=budget_category[i],
-            category_amount=category_amount[i],
+            category_amount=category_amount_decimal[i],
             project=new_project
         )
         db.add(sub)

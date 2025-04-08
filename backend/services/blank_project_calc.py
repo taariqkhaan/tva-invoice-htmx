@@ -1,8 +1,9 @@
 from collections import defaultdict
 from typing import List
+from decimal import Decimal, ROUND_HALF_UP
 
-def calculate_totals(budget_categories: List[str], category_amounts: List[float]) -> dict:
-    totals = defaultdict(float)
+def calculate_totals(budget_categories: List[str], category_amounts: List[Decimal]) -> dict:
+    totals = defaultdict(lambda: Decimal("0.00"))
 
     for category, amount in zip(budget_categories, category_amounts):
         key = category.strip().lower()

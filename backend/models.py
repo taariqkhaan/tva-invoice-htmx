@@ -1,7 +1,7 @@
 from backend.database import MainBase, PdfBase
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy import Date
+
 
 #-----------MAIN DATABASE MODEL-----------
 
@@ -16,11 +16,11 @@ class Project(MainBase):
     po_number = Column(String)
     tao_number = Column(String)
     contract_number = Column(String)
-    total_labor_amount = Column(Float, default=0.0)
-    total_expenses_amount = Column(Float, default=0.0)
-    total_travel_amount = Column(Float, default=0.0)
-    total_tier_fee = Column(Float, default=0.0)
-    total_budget_amount = Column(Float, default=0.0)
+    total_labor_amount = Column(Numeric(12, 2), default=0.00)
+    total_expenses_amount = Column(Numeric(12, 2), default=0.00)
+    total_travel_amount = Column(Numeric(12, 2), default=0.00)
+    total_tier_fee = Column(Numeric(12, 2), default=0.00)
+    total_budget_amount = Column(Numeric(12, 2), default=0.00)
 
     subtasks = relationship("Subtask", back_populates="project", cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="project", cascade="all, delete-orphan")
@@ -36,7 +36,7 @@ class Subtask(MainBase):
     short_code = Column(String)
     line_item = Column(Integer, default=0)
     budget_category = Column(String)
-    category_amount = Column(Float, default=0.0)
+    category_amount = Column(Numeric(12, 2), default=0.00)
 
     project = relationship("Project", back_populates="subtasks")
     invoice_items = relationship("InvoiceAmount", back_populates="subtask", cascade="all, delete-orphan")
@@ -47,8 +47,8 @@ class Invoice(MainBase):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects_table.id", ondelete="CASCADE"), nullable=False)
-    tier_fee_percentage = Column(Float, default=0.0)
-    invoice_percentage = Column(Float, default=0.0)
+    tier_fee_percentage = Column(Numeric(12, 2), default=0.00)
+    invoice_percentage = Column(Numeric(12, 2), default=0.00)
     invoice_number = Column(String)
     invoice_through_date = Column(String)
     invoice_creation_date = Column(String)
@@ -63,7 +63,7 @@ class InvoiceAmount(MainBase):
     id = Column(Integer, primary_key=True, index=True)
     invoice_id = Column(Integer, ForeignKey("invoices_table.id", ondelete="CASCADE"), nullable=False)
     subtask_id = Column(Integer, ForeignKey("subtasks_table.id", ondelete="CASCADE"), nullable=False)
-    invoice_amount = Column(Float, default=0.0)
+    invoice_amount = Column(Numeric(12, 2), default=0.00)
 
     invoice = relationship("Invoice", back_populates="invoice_items")
     subtask = relationship("Subtask", back_populates="invoice_items")

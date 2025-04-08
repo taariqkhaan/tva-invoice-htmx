@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse, HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List
+from decimal import Decimal, InvalidOperation
 from fastapi.templating import Jinja2Templates
 from backend.models import Project, Invoice
 from backend import models
@@ -31,10 +32,11 @@ def view_project_invoices_page(project_id: int, request: Request, db: Session = 
 
     # Sum amounts per invoice
     invoice_data = []
-    total_invoiced = 0
+    total_invoiced = Decimal("0.00")
     for invoice in invoices:
-        total_amount = sum(item.invoice_amount for item in invoice.invoice_items)
+        total_amount = sum((item.invoice_amount for item in invoice.invoice_items), Decimal("0.00"))
         total_invoiced += total_amount
+
         formatted_through_date = datetime.strptime(invoice.invoice_through_date, "%Y-%m-%d").strftime("%m/%d/%Y")
         invoice_data.append({
             "invoice": invoice,
@@ -45,7 +47,7 @@ def view_project_invoices_page(project_id: int, request: Request, db: Session = 
     contributions = [
         {
             "number": row["invoice"].invoice_number,
-            "percent": (row["total_amount"] / project.total_budget_amount * 100) if project.total_budget_amount else 0,
+            "percent": (row["total_amount"] / project.total_budget_amount * Decimal("100")).quantize(Decimal("0.01")),
             "amount": row["total_amount"]
         }
         for row in invoice_data
@@ -66,22 +68,12 @@ def get_invoice_form(project_id: int, request: Request, db: Session = Depends(ge
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    # Calculate total invoice % already billed
-    total_invoiced_pct = sum(invoice.invoice_percentage for invoice in project.invoices)
-
-    # Prevent creating invoice at or above 100%
-    if total_invoiced_pct >= 100:
+    # Budget check
+    if not project.total_budget_amount or project.total_budget_amount <= 0:
         return templates.TemplateResponse("components/error_modal.html", {
             "request": request,
-            "message": "Cannot create invoice: 100% of the project has already been invoiced."
-        })
-
-    # Check if total budget is 0
-    if project.total_budget_amount == 0:
-        return templates.TemplateResponse("components/error_modal.html", {
-            "request": request,
-            "message": "Total approved amount is $0."
-                       " Go to project home and edit project to update approved amounts."
+            "message": "Total approved amount is $0. "
+                       "Please update the project's approved budget before creating an invoice."
         })
 
     latest_invoice = (
@@ -91,46 +83,25 @@ def get_invoice_form(project_id: int, request: Request, db: Session = Depends(ge
         .first()
     )
 
-    last_percentage = latest_invoice.invoice_percentage if latest_invoice else 0.0
+    last_percentage = latest_invoice.invoice_percentage if latest_invoice else Decimal("0.00")
+
+    # Check if 100% of approved amount is invoiced
+    if last_percentage.quantize(Decimal("0.01")) >= Decimal("100.00"):
+        return templates.TemplateResponse("components/error_modal.html", {
+            "request": request,
+            "message": "All approved amount has been invoiced."
+        })
+
+    is_first_invoice = latest_invoice is None
+    existing_tier_fee = latest_invoice.tier_fee_percentage if latest_invoice else None
 
     return templates.TemplateResponse("components/invoice_create.html", {
         "request": request,
         "project": project,
-        "last_percentage": last_percentage
+        "last_percentage": last_percentage,
+        "is_first_invoice": is_first_invoice,
+        "existing_tier_fee": existing_tier_fee
     })
-
-@router.post("/invoices/create/{project_id}", response_class=HTMLResponse)
-def create_invoice(
-    request: Request,
-    project_id: int,
-    invoice_percentage: float = Form(...),
-    tier_fee_percentage: float = Form(...),
-    invoice_through_date: str = Form(...),
-    db: Session = Depends(get_main_db)
-):
-
-    try:
-        invoice = generate_invoice(
-            db=db,
-            project_id=project_id,
-            invoice_percentage=invoice_percentage,
-            tier_fee_percentage=tier_fee_percentage,
-            invoice_through_date=invoice_through_date
-        )
-        # Redirect back to the invoice list modal or page
-        return RedirectResponse(
-            url=f"/invoices/{project_id}",
-            status_code=303
-        )
-    except ValueError as e:
-        project = db.query(Project).filter(Project.id == project_id).first()
-        return templates.TemplateResponse("components/invoice_create.html", {
-            "request": request,
-            "error": str(e),
-            "project": project
-        })
-
-
 
 @router.get("/invoices/details/{invoice_number}", response_class=HTMLResponse)
 def view_invoice_details(invoice_number: str, request: Request, db: Session = Depends(get_main_db)):
@@ -225,6 +196,94 @@ def download_invoice_pdf(invoice_number: str, project_id: int):
     except Exception as e:
         return Response(content=f"Error generating PDF invoice: {e}", status_code=500)
 
+
+@router.post("/invoices/create/{project_id}", response_class=HTMLResponse)
+def create_invoice(
+    request: Request,
+    project_id: int,
+    invoice_percentage: str = Form(...),
+    tier_fee_percentage: str = Form(...),
+    invoice_through_date: str = Form(...),
+    db: Session = Depends(get_main_db)
+):
+
+    try:
+
+        # Parse submitted date
+        submitted_date = datetime.strptime(invoice_through_date, "%Y-%m-%d")
+
+        # Get latest invoice (if any)
+        latest_invoice = (
+            db.query(Invoice)
+            .filter(Invoice.project_id == project_id)
+            .order_by(Invoice.invoice_percentage.desc())
+            .first()
+        )
+
+        # Validate date order
+        if latest_invoice:
+            latest_date = datetime.strptime(latest_invoice.invoice_through_date, "%Y-%m-%d")
+            if submitted_date <= latest_date:
+                project = db.query(Project).filter(Project.id == project_id).first()
+                return templates.TemplateResponse("components/invoice_create.html", {
+                    "request": request,
+                    "project": project,
+                    "last_percentage": latest_invoice.invoice_percentage,
+                    "is_first_invoice": False,
+                    "existing_tier_fee": latest_invoice.tier_fee_percentage,
+                    "date_error": f"Invoice date must be after the last invoice's date ({latest_date.strftime('%m/%d/%Y')})."
+                })
+
+        invoice_percentage = Decimal(invoice_percentage)
+        tier_fee_percentage = Decimal(tier_fee_percentage)
+
+        invoice = generate_invoice(
+            db=db,
+            project_id=project_id,
+            invoice_percentage=invoice_percentage,
+            tier_fee_percentage=tier_fee_percentage,
+            invoice_through_date=invoice_through_date
+        )
+
+        # Rebuild invoice data
+        project = db.query(Project).filter(Project.id == project_id).first()
+        invoices = project.invoices
+
+        invoice_data = []
+        total_invoiced = Decimal("0.00")
+        for invoice in invoices:
+            total_amount = sum(
+                (item.invoice_amount for item in invoice.invoice_items),
+                Decimal("0.00")
+            )
+            total_invoiced += total_amount
+            formatted_through_date = datetime.strptime(
+                invoice.invoice_through_date, "%Y-%m-%d"
+            ).strftime("%m/%d/%Y")
+
+            invoice_data.append({
+                "invoice": invoice,
+                "total_amount": total_amount,
+                "formatted_through_date": formatted_through_date
+            })
+
+        response = templates.TemplateResponse("components/invoice_row.html", {
+            "request": request,
+            "invoices": invoice_data
+        })
+        response.headers["HX-Trigger"] = "invoiceCreated"
+        return response
+
+    except ValueError as e:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        return templates.TemplateResponse("components/invoice_create.html", {
+            "request": request,
+            "error": str(e),
+            "project": project
+        })
+
+
+
 @router.post("/invoices/delete/{invoice_number}")
 def delete_invoice(invoice_number: str, db: Session = Depends(get_main_db)):
     invoice = db.query(Invoice).filter(Invoice.invoice_number == invoice_number).first()
@@ -238,4 +297,5 @@ def delete_invoice(invoice_number: str, db: Session = Depends(get_main_db)):
     db.commit()
 
     return RedirectResponse(url=f"/invoices/{project_id}", status_code=303)
+
 

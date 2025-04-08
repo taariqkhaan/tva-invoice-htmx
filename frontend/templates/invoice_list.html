@@ -9,18 +9,13 @@
 >
   <!-- Overlay -->
   <div class="absolute inset-0 bg-blue-600 bg-opacity-70 z-0"></div>
-
-  <!-- Foreground content (no max-width or padding) -->
+  <!-- Foreground content -->
   <div class="relative z-10">
-
-    <!-- Row: Title left, Buttons right -->
     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-
       <!-- Left: Title -->
       <h1 class="text-2xl font-bold text-white ml-0 md:ml-6">
         {{ project.project_name }}
       </h1>
-
       <!-- Right: Buttons -->
       <div class="flex gap-2 mr-0 md:mr-6">
         <a
@@ -39,11 +34,9 @@
           Create Invoice
         </a>
       </div>
-
     </div>
   </div>
 </div>
-
 
 <!-- Invoiced Progress Bar -->
 <div class="pt-0 pl-6 pr-6">
@@ -63,7 +56,6 @@
   </div>
 </div>
 
-
 <div class="pt-3 pl-6 pr-6">
   <!-- Table Header -->
   <div class="flex justify-between items-center mb-4">
@@ -71,65 +63,20 @@
   </div>
   <!-- Invoice Table -->
   <table class="w-full text-sm table-auto border border-gray-300 rounded bg-white shadow">
-      <thead class="bg-gray-200 text-gray-700">
-        <tr>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Invoice #</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Invoiced Amount</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Invoiced</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Max Tier Fee</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Service Through</th>
-          <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
-        </tr>
-      </thead>
+    <thead class="bg-gray-200 text-gray-700">
+      <tr>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Invoice #</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Total Invoiced Amount</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Invoiced</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">% Max Tier Fee</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Service Through</th>
+        <th class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">Actions</th>
+      </tr>
+    </thead>
 
     <tbody id="invoice-table-body">
-      {% for row in invoices %}
-        {% set invoice = row.invoice %}
-<tr class="border-t hover:bg-gray-50">
-  <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.invoice.invoice_number }}</td>
-  <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">${{ "{:,.2f}".format(row.total_amount) }}</td>
-  <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.invoice.invoice_percentage }}</td>
-  <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.invoice.tier_fee_percentage }}</td>
-  <td class="px-4 py-1 border-r border-gray-300 whitespace-nowrap">{{ row.formatted_through_date }}</td>
-  <td class="relative px-4 py-1 text-sm text-right" x-data="{ open: false }">
-    <button @click="open = !open" class="bg-gray-100 text-blue-600 hover:underline text-xs px-2 py-1 rounded">
-      🔽
-    </button>
-    <div x-show="open" @click.outside="open = false" class="absolute right-0 bottom-full mb-2 w-44 bg-white border rounded shadow-lg z-50" x-transition>
-      <a class="block px-4 py-2 hover:bg-gray-100 text-left w-full"
-         hx-get="/invoices/details/{{ row.invoice.invoice_number }}"
-         hx-target="#invoice-details"
-         hx-swap="innerHTML">ℹ️ View Details</a>
-
-      <a class="block px-4 py-2 hover:bg-gray-100 text-left w-full"
-         hx-get="/invoices/download-options/{{ row.invoice.invoice_number }}?project_id={{ row.invoice.project_id }}"
-         hx-target="#download-invoice"
-         hx-swap="innerHTML">💾 Download</a>
-
-      {% if loop.last %}
-      <form method="post" action="/invoices/delete/{{ row.invoice.invoice_number }}">
-        <button
-          type="submit"
-          onclick="return confirm('Are you sure you want to delete Invoice# {{ row.invoice.invoice_number }}?')"
-          class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100">
-          ❌ Delete
-        </button>
-      </form>
-      {% endif %}
-    </div>
-  </td>
-</tr>
-{% else %}
-<tr>
-  <td colspan="4" class="text-center text-gray-500 py-4">
-    No invoices found.
-  </td>
-</tr>
-
-
-      {% endfor %}
+      {% include "components/invoice_row.html" %}
     </tbody>
-
-    </table>
+  </table>
 </div>
 {% endblock %}

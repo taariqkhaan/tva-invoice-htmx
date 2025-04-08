@@ -47,22 +47,30 @@
   <div id="invoice-details"></div>
   <div id="download-invoice"></div>
 
- <script>
-    function closeAndReloadProjects() {
-      document.getElementById('project-detail').innerHTML = '';
+<script>
+  function closeAndReloadProjects() {
+    document.getElementById('project-detail').innerHTML = '';
 
-
-      const deleteIdInput = document.getElementById('delete_project_id');
-        if (deleteIdInput)
-        {
-          const id = deleteIdInput.value;
-          htmx.ajax('DELETE', `/projects/${id}`, {target: '#project-detail', swap: 'none'});
-        }
-
-        location.reload();
+    const deleteIdInput = document.getElementById('delete_project_id');
+    if (deleteIdInput) {
+      const id = deleteIdInput.value;
+      htmx.ajax('DELETE', `/projects/${id}`, { target: '#project-detail', swap: 'none' });
     }
-  </script>
 
+    location.reload();
+  }
+
+  document.body.addEventListener("invoiceCreated", function () {
+    // Close the modal
+    document.querySelector("#create-invoice").innerHTML = "";
+
+    // Reload the progress bar
+    htmx.ajax("GET", window.location.pathname, {
+      target: "#invoice-progress",
+      swap: "innerHTML"
+    });
+  });
+</script>
 
 </body>
 </html>

@@ -203,14 +203,6 @@ def assign_tao_tags(db_session: Session):
             if code_id:
                 db_session.query(ExtractedWord).filter_by(id=code_id).update({"word_tag": "short_code"})
 
-        # # Alias with budget
-        # elif word in ["(M2)", "(B9)", "(N1)", "(T1)", "(H1)", "(G1)", "(N4)", "(F1)", "(HC)"]:
-        #     alias_id = get_id(i)
-        #     total_id = get_id(i + 1)
-        #     if alias_id:
-        #         db_session.query(ExtractedWord).filter_by(id=alias_id).update({"word_tag": "alias"})
-        #     if total_id:
-        #         db_session.query(ExtractedWord).filter_by(id=total_id).update({"word_tag": "alias_budget"})
 
         # Total Budget
         elif word == "Total:" and not total_bug_found:

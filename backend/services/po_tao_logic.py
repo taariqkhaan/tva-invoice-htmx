@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from collections import defaultdict
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from backend.models import ExtractedWord, Project, Subtask
 
 
@@ -60,7 +61,7 @@ def get_aggregated_data_from_temp_db(pdf_db: Session, bmcd_form_number: str) -> 
             "subtask_name": None,
             "short_code": None,
             "budget_category": "",
-            "category_amount": 0.0
+            "category_amount": Decimal("0.00")
         }
 
         for word in words:
@@ -88,9 +89,9 @@ def get_aggregated_data_from_temp_db(pdf_db: Session, bmcd_form_number: str) -> 
 
             elif word.word_tag == "line_cost":
                 try:
-                    subtask["category_amount"] = float(word.word.replace(",", "").replace("$", "").strip())
+                    subtask["category_amount"] = Decimal(word.word.replace(",", "").replace("$", "").strip())
                 except ValueError:
-                    subtask["category_amount"] = 0.0
+                    subtask["category_amount"] = Decimal("0.00")
 
         # Only add if alias is found
         if subtask["alias"]:
@@ -108,7 +109,7 @@ def get_aggregated_data_from_temp_db(pdf_db: Session, bmcd_form_number: str) -> 
                     "subtask_name": name,
                     "short_code": "N/A",
                     "budget_category": budget_category,
-                    "category_amount": 0.0
+                    "category_amount": Decimal("0.00")
                 })
 
     # Grouped values
@@ -124,21 +125,21 @@ def get_aggregated_data_from_temp_db(pdf_db: Session, bmcd_form_number: str) -> 
 
         elif row.word_tag == "line_cost":
             try:
-                cost = float(row.word.replace(",", "").replace("$", "").strip())
+                cost = Decimal(row.word.replace(",", "").replace("$", "").strip())
                 line_cost_by_item[row.item_no].append(cost)
             except:
                 continue
 
     # Initialize totals
-    total_labor_amount = 0.0
-    total_expenses_amount = 0.0
-    total_travel_amount = 0.0
-    total_tier_fee = 0.0
-    total_budget_amount = 0.0
+    total_labor_amount = Decimal("0.00")
+    total_expenses_amount = Decimal("0.00")
+    total_travel_amount = Decimal("0.00")
+    total_tier_fee = Decimal("0.00")
+    total_budget_amount = Decimal("0.00")
 
     for item_no, costs in line_cost_by_item.items():
         cost_type = cost_type_by_item.get(item_no, "")
-        item_total = sum(costs)
+        item_total = sum(costs, Decimal("0.00"))
         total_budget_amount += item_total
 
         if cost_type == "labor":

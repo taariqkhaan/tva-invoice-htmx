@@ -1,15 +1,17 @@
 from sqlalchemy.orm import Session
 from backend.models import Project, Subtask, Invoice, InvoiceAmount
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 import re
 
 def generate_invoice(
     db: Session,
     project_id: int,
-    invoice_percentage: float,
-    tier_fee_percentage: float,
+    invoice_percentage: Decimal,
+    tier_fee_percentage: Decimal,
     invoice_through_date: str
 ):
+
     # Step 1: Get project
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
@@ -44,17 +46,17 @@ def generate_invoice(
         .order_by(Invoice.invoice_percentage.desc())
         .first()
     )
-    previous_max = max_previous_percentage[0] if max_previous_percentage else 0.0
+    previous_max = Decimal(str(max_previous_percentage[0])) if max_previous_percentage else Decimal("0.00")
 
-    delta_percentage = invoice_percentage - previous_max
-    if delta_percentage <= 0:
+    if invoice_percentage <= previous_max:
         raise ValueError("Invoice percentage must be greater than previous maximum.")
 
-    if invoice_percentage > 100:
+    if invoice_percentage > Decimal("100.00"):
         raise ValueError("Invoice percentage cannot exceed 100%.")
 
-    percent = delta_percentage / 100.0
-    tier_percent = tier_fee_percentage / 100.0
+    delta_percentage = (invoice_percentage - previous_max).quantize(Decimal("0.0001"))
+    percent = (delta_percentage / Decimal("100.00")).quantize(Decimal("0.0001"))
+    tier_percent = (tier_fee_percentage / Decimal("100.00")).quantize(Decimal("0.0001"))
 
     # Step 5: Create invoice + invoice amount entries
     new_invoice = Invoice(
@@ -70,17 +72,19 @@ def generate_invoice(
 
     created_amounts = []
     for subtask in subtasks:
-        amount = subtask.category_amount or 0.0
+        amount = Decimal(str(subtask.category_amount or 0.0))
 
         if subtask.budget_category.strip().lower() == "fee":
             invoice_amount_value = amount * percent * tier_percent
         else:
             invoice_amount_value = amount * percent
 
+        invoice_amount_value = invoice_amount_value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
         inv_amt = InvoiceAmount(
             invoice_id=new_invoice.id,
             subtask_id=subtask.id,
-            invoice_amount=round(invoice_amount_value, 2),
+            invoice_amount=invoice_amount_value
         )
         db.add(inv_amt)
         created_amounts.append(inv_amt)
