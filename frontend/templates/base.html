@@ -60,6 +60,8 @@
     location.reload();
   }
 
+
+
   document.body.addEventListener("invoiceCreated", function () {
     // Close the modal
     document.querySelector("#create-invoice").innerHTML = "";
@@ -70,6 +72,15 @@
       swap: "innerHTML"
     });
   });
+
+    document.body.addEventListener("FilesUploaded", function () {
+        // Close the modal
+        document.querySelector("#upload-pdf").innerHTML = "";
+
+         window.location.href = "/projects/";
+    });
+
+
 </script>
 
 </body>
