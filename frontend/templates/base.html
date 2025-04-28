@@ -49,16 +49,21 @@
 
 <script>
   function closeAndReloadProjects() {
-    document.getElementById('project-detail').innerHTML = '';
-
-    const deleteIdInput = document.getElementById('delete_project_id');
-    if (deleteIdInput) {
-      const id = deleteIdInput.value;
-      htmx.ajax('DELETE', `/projects/${id}`, { target: '#project-detail', swap: 'none' });
-    }
-
-    location.reload();
+  const deleteIdInput = document.getElementById('delete_project_id');
+  if (deleteIdInput) {
+    const id = deleteIdInput.value;
+    htmx.ajax('DELETE', `/projects/${id}`, {
+      target: '#project-detail',
+      swap: 'none',
+      settleDelay: 200  // wait a bit
+    });
   }
+
+  setTimeout(() => {
+    location.reload();
+  }, 300);
+}
+
 
 
 
