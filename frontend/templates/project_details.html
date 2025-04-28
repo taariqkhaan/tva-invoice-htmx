@@ -52,8 +52,9 @@
           </thead>
 
           <tbody>
-            {% set ns = namespace(last_name="") %}
+            {% set ns = namespace(last_name="", last_alias="") %}
             {% for sub in project.subtasks %}
+
             <tr class="border-t">
               <td class="px-2 py-1 border-r border-gray-300">
                 {% if sub.subtask_name != ns.last_name %}
@@ -70,7 +71,7 @@
               <td class="px-2 py-1 border-r border-gray-300">{{ sub.budget_category }}</td>
               <td class="px-2 py-1 border-r border-gray-300">${{ "{:,.2f}".format(sub.category_amount) }}</td>
               <td class="px-2 py-1">
-                {% set invoiced = invoiced_lookup.get(sub.id, 0.0) %}
+                {% set invoiced = invoiced_lookup.get(sub.id, Decimal("0.00")) %}
                 {% set raw_unbilled = sub.category_amount - invoiced %}
                 {% set unbilled = raw_unbilled if raw_unbilled > 0 else 0.0 %}
                 ${{ "{:,.2f}".format(unbilled) }}

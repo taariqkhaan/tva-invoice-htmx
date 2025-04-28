@@ -119,7 +119,8 @@ def view_project(project_id: int, request: Request, db: Session = Depends(get_ma
     return templates.TemplateResponse("project_details.html",
                                       {"request": request,
                                        "project": project,
-                                       "invoiced_lookup": invoiced_lookup
+                                       "invoiced_lookup": invoiced_lookup,
+                                       "Decimal": Decimal
                                        })
 
 
